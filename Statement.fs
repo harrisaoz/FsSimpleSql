@@ -33,3 +33,4 @@ let addParameters parameters (command: DbCommand) =
 
 let setParamValue (paramIndex: int) value (command: DbCommand) =
     command.Parameters.Item(paramIndex).Value <- value
+    command
