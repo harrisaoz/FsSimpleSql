@@ -2,19 +2,19 @@
 
 open System.Data.Common
 
-type CommandTimeout =
-    | CommandTimeout of int
-    | DefaultCommandTimeout
+type StatementTimeout =
+    | TimeoutSeconds of int
+    | Default
 
-let [<Literal>] DefaultCommandTimeoutSeconds = 180
+let [<Literal>] DefaultStatementTimeoutSeconds = 180
 
 let setStatementTimeout timeout (command: DbCommand) =
     match timeout with
-    | CommandTimeout seconds ->
+    | TimeoutSeconds seconds ->
         command.CommandTimeout <- seconds
         command
-    | DefaultCommandTimeout ->
-        command.CommandTimeout <- DefaultCommandTimeoutSeconds
+    | Default ->
+        command.CommandTimeout <- DefaultStatementTimeoutSeconds
         command
 
 let newStatement (connection: DbConnection) text =
