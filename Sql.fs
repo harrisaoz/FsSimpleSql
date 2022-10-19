@@ -14,7 +14,7 @@ type SqlCommand<'a> =
     | SqlCommand of
         sqlText: string *
         parameters: InputParameters *
-        binder: ('a -> DbCommand -> unit)
+        binder: ('a -> DbCommand -> DbCommand)
 
 let pipeToExternalThenAudit qryTimeout producer dbConsumer extConsumer (qryConn, cmdConn) =
     let (SqlCommand(consumerSqlText, dbConsumerParams, dbConsumerBinder)) = dbConsumer
@@ -23,10 +23,7 @@ let pipeToExternalThenAudit qryTimeout producer dbConsumer extConsumer (qryConn,
         |> Statement.addParameters dbConsumerParams
 
     let dbConsume (a: 'a) =
-        Tx.inTransaction (cmdConn, consumerStatement) (
-            fun cmd ->
-                dbConsumerBinder a cmd
-                Exec.executeDml cmd)
+        Tx.inTransaction (cmdConn, consumerStatement) (dbConsumerBinder a >> Exec.executeDml)
 
     let forEach (a: 'a) =
         extConsumer a
