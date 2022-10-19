@@ -65,6 +65,18 @@ let applyConnectionStringDefaults connectionString =
 let newConnection connectionString =
     new SqlConnection(connectionString)
 
+let openConnection (connection: DbConnection) =
+    connection.Open ()
+
+let usingCqConnectionPair (fn: DbConnection * DbConnection -> 'a) (DataSource(_, cqConnectionPair)) =
+    let pair = cqConnectionPair ()
+    use queryConnection = fst pair
+    use commandConnection = snd pair
+    
+    openConnection queryConnection
+    openConnection commandConnection
+    fn (queryConnection, commandConnection)
+
 let setApplicationIntent intent connectionString =
     let builder = SqlConnectionStringBuilder connectionString
     builder.ApplicationIntent <- intent
