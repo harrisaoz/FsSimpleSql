@@ -1,6 +1,7 @@
 ﻿module FsSimpleSql.Sql
 
 open System.Data.Common
+open Microsoft.Extensions.Logging
 
 type InputParameters = DbParameter array
 
@@ -16,7 +17,7 @@ type SqlCommand<'a> =
         parameters: InputParameters *
         binder: ('a -> DbCommand -> DbCommand)
 
-let pipeToExternalThenAudit qryTimeout producer dbConsumer extConsumer (qryConn, cmdConn) =
+let pipeToExternalThenAuditWithLogging log qryTimeout producer dbConsumer extConsumer (qryConn, cmdConn) =
     let (SqlCommand(consumerSqlText, dbConsumerParams, dbConsumerBinder)) = dbConsumer
     let consumerStatement =
         Statement.newStatement cmdConn consumerSqlText
@@ -29,6 +30,13 @@ let pipeToExternalThenAudit qryTimeout producer dbConsumer extConsumer (qryConn,
         extConsumer a
         |> Result.bind (fun _ -> dbConsume a)
         |> Result.map (fun n -> 1 - n)
+        |> function
+            | Ok n ->
+                log LogLevel.Information $"pipeToExternalThenAuditWithTracing forEach {a} -> {n}"
+                Ok n
+            | Error msg ->
+                log LogLevel.Warning $"pipeToExternalThenAuditWithTracing forEach {a} -> {msg}"
+                Error msg
 
     let (SqlQuery (producerText, producerParameters, producerDao)) = producer
     Statement.newStatement qryConn producerText
@@ -37,3 +45,6 @@ let pipeToExternalThenAudit qryTimeout producer dbConsumer extConsumer (qryConn,
     |> Records.enumerateResultSet producerDao
     |> Seq.map forEach
     |> List.ofSeq
+
+let pipeToExternalThenAudit qryTimeout =
+    pipeToExternalThenAuditWithLogging (fun _ _ -> ()) qryTimeout
