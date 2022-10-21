@@ -9,7 +9,7 @@ type SqlQuery<'a> =
     | SqlQuery of
         queryText: string *
         parameters: InputParameters *
-        extractor: (Records.RecordExtractor -> 'a)
+        extractor: (DbDataReader -> 'a)
 
 type SqlCommand<'a> =
     | SqlCommand of

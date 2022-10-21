@@ -29,9 +29,8 @@ type RecordEnumerator<'a> (reader: DbDataReader, deserialize: DbDataReader -> 'a
         member this.GetEnumerator(): IEnumerator<'a> =
             this :> IEnumerator<'a>
 
-let extractWith: (DbDataReader -> 'a) -> DbDataReader -> IEnumerable<'a> =
-    fun extractor reader ->
-        new RecordEnumerator<'a>(reader, extractor)
+let enumerateResultSet (extract: DbDataReader -> 'a) reader =
+    new RecordEnumerator<'a>(reader, extract)
 
 let getNotNull (reader: DbDataReader) (columnValueByIndex: int -> 'a) (columnName: string) =
     columnValueByIndex(reader.GetOrdinal columnName)
@@ -43,26 +42,15 @@ let getNullable (reader: DbDataReader) (columnValueByIndex: int -> 'a) (columnNa
     else
         Option.Some (columnValueByIndex ordinal)
 
+let getColumnValue (_: 'a) (reader: DbDataReader) (name: string) =
+    reader.GetFieldValue<'a>(name)
+
 let bindColumnValue (dbType: SqlDbType) (name: string) (value: 'a) =
     let commandParameter = SqlParameter($"@{name}", dbType)
     commandParameter.Value <- value
     commandParameter
 
-type RecordExtractor (reader: DbDataReader) =
-    member this.GetNotNull(columnValueByIndex: int -> 'a, columnName: string): 'a =
-        getNotNull reader columnValueByIndex columnName
-
-    member this.GetNullable(columnValueByIndex: int -> 'a, columnName: string): 'a option =
-        getNullable reader columnValueByIndex columnName
-
-    member this.GetInt32(columnName: string): int32 option =
-        getNullable reader reader.GetInt32 columnName
-
-    member this.GetString(columnName: string): string option =
-        getNullable reader reader.GetString columnName
-
-let readRecord' reader (shaper: RecordExtractor -> 'a) =
-    shaper (RecordExtractor(reader))
-
-let enumerateResultSet (extract: RecordExtractor -> 'a) reader =
-    new RecordEnumerator<'a>(reader, RecordExtractor >> extract)
+let bindSizedColumnValue (dbType: SqlDbType) (length: int) (name: string) (value: 'a) =
+    let commandParameter = SqlParameter($"@{name}", dbType, length)
+    commandParameter.Value <- value
+    commandParameter
