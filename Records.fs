@@ -42,8 +42,8 @@ let getNullable (reader: DbDataReader) (columnValueByIndex: int -> 'a) (columnNa
     else
         Option.Some (columnValueByIndex ordinal)
 
-let getColumnValue (_: 'a) (reader: DbDataReader) (name: string) =
-    reader.GetFieldValue<'a>(name)
+let getColumnValue<'a> (reader: DbDataReader) (name: string) =
+    DataReaderExtensions.GetFieldValue<'a>(reader, name)
 
 let bindColumnValue (dbType: SqlDbType) (name: string) (value: 'a) =
     let commandParameter = SqlParameter($"@{name}", dbType)
