@@ -32,10 +32,11 @@ let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout producer dbC
         |> Result.map (fun n -> 1 - n)
         |> function
             | Ok n ->
-                logger.Information("pipeToExternalThenAuditWithTracing forEach {a} -> {n}", a, n)
+                logger.Debug("pipeToExternalThenAuditWithTracing.forEach {a} -> {n}", a, n)
                 Ok n
             | Error msg ->
-                logger.Warning("pipeToExternalThenAuditWithTracing forEach {a} -> {msg}", a, msg)
+                logger.Debug("pipeToExternalThenAuditWithTracing.forEach {a}", a)
+                logger.Warning("pipeToExternalThenAuditWithTracing.forEach {msg}", msg)
                 Error msg
 
     let (SqlQuery (producerText, producerParameters, producerDao)) = producer
