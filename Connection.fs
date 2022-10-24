@@ -11,18 +11,6 @@ type DataSource =
         getConnection: (unit -> DbConnection) *
         getCqConnectionPair: (unit -> DbConnection * DbConnection)
 
-// let interact text prepare execute =
-//     use connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString)
-//     let interaction: DbCommand = new Microsoft.Data.SqlClient.SqlCommand(text, connection)
-//
-//     match commandTimeout with
-//     | CommandTimeout seconds -> interaction.CommandTimeout <- seconds
-//     | DefaultCommandTimeout -> interaction.CommandTimeout <- 30
-//
-//     prepare interaction
-//     connection.Open()
-//     execute interaction
-
 type AuthenticationData =
     | TrustedConnection
     | Server of userId: string * password: string
