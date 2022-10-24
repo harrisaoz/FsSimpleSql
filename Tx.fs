@@ -2,8 +2,11 @@
 
 open System.Data.Common
 
-let start (connection: DbConnection) =
-    connection.BeginTransaction()
+let startIsolated level (connection: DbConnection) =
+    connection.BeginTransaction(level)
+
+let start =
+    startIsolated System.Data.IsolationLevel.Snapshot
 
 let associate (command: DbCommand) transaction =
     command.Transaction <- transaction
