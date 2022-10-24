@@ -17,7 +17,7 @@ type SqlCommand<'a> =
         parameters: InputParameters *
         binder: ('a -> DbCommand -> DbCommand)
 
-let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout producer dbConsumer extConsumer (qryConn, cmdConn) =
+let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout id producer dbConsumer extConsumer (qryConn, cmdConn) =
     let (SqlCommand(consumerSqlText, dbConsumerParams, dbConsumerBinder)) = dbConsumer
     let consumerStatement =
         Statement.newStatement cmdConn consumerSqlText
@@ -36,7 +36,7 @@ let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout producer dbC
                 Ok n
             | Error msg ->
                 logger.Debug("pipeToExternalThenAuditWithTracing.forEach {a}", a)
-                logger.Warning("pipeToExternalThenAuditWithTracing.forEach {msg}", msg)
+                logger.Warning("pipeToExternalThenAuditWithTracing.forEach {Id} {Msg}", id a, msg)
                 Error msg
 
     let (SqlQuery (producerText, producerParameters, producerDao)) = producer
