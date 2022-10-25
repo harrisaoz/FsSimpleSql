@@ -27,17 +27,19 @@ let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout id producer 
         Tx.inTransaction (cmdConn, consumerStatement) (dbConsumerBinder a >> Exec.executeDml)
 
     let forEach (a: 'a) =
-        extConsumer a
-        |> Result.bind (fun _ -> dbConsume a)
-        |> Result.map (fun n -> 1 - n)
-        |> function
-            | Ok n ->
-                logger.Debug("pipeToExternalThenAuditWithTracing.forEach {a} -> {n}", a, n)
-                Ok n
-            | Error msg ->
-                logger.Debug("pipeToExternalThenAuditWithTracing.forEach {a}", a)
-                logger.Warning("pipeToExternalThenAuditWithTracing.forEach {Id} {Msg}", id a, msg)
-                Error msg
+        async {
+            return extConsumer a
+            |> Result.bind (fun _ -> dbConsume a)
+            |> Result.map (fun n -> 1 - n)
+            |> function
+                | Ok n ->
+                    logger.Debug("pipeToExternalThenAuditWithTracing.forEach {a} -> {n}", a, n)
+                    Ok n
+                | Error msg ->
+                    logger.Debug("pipeToExternalThenAuditWithTracing.forEach {a}", a)
+                    logger.Warning("pipeToExternalThenAuditWithTracing.forEach {Id} {Msg}", id a, msg)
+                    Error msg
+        }
 
     let (SqlQuery (producerText, producerParameters, producerDao)) = producer
     Statement.newStatement qryConn producerText
@@ -45,6 +47,8 @@ let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout id producer 
     |> Exec.executeQueryWithTimeout qryTimeout
     |> Records.enumerateResultSet producerDao
     |> Seq.map forEach
+    |> Async.Sequential
+    |> Async.RunSynchronously
     |> List.ofSeq
 
 let pipeToExternalThenAudit qryTimeout =
