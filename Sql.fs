@@ -13,15 +13,15 @@ type SqlQuery<'a> =
 
 type SqlCommand<'a> =
     | SqlCommand of
-        sqlText: string *
+        newStatement: (DbConnection -> DbCommand) *
         parameters: InputParameters *
         binder: ('a -> DbCommand -> DbCommand)
 
 let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout id producer dbConsumer extConsumer (qryConn, cmdConn) =
-    let (SqlCommand(consumerSqlText, dbConsumerParams, dbConsumerBinder)) = dbConsumer
+    let (SqlCommand(newStatement, dbConsumerParams, dbConsumerBinder)) = dbConsumer
     let consumerStatement =
-        Statement.newStatement cmdConn consumerSqlText
-        |> Statement.addParameters dbConsumerParams
+        newStatement cmdConn
+        |> Statement.withParameters dbConsumerParams
 
     let dbConsume (a: 'a) =
         Tx.inTransaction (cmdConn, consumerStatement) (dbConsumerBinder a >> Exec.executeDml)
@@ -42,8 +42,9 @@ let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout id producer 
         }
 
     let (SqlQuery (producerText, producerParameters, producerDao)) = producer
-    Statement.newStatement qryConn producerText
-    |> Statement.addParameters producerParameters
+    qryConn
+    |> Statement.newTextStatement producerText
+    |> Statement.withParameters producerParameters
     |> Exec.executeQueryWithTimeout qryTimeout
     |> Records.enumerateResultSet producerDao
     |> Seq.map forEach
