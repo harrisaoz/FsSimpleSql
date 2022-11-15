@@ -6,7 +6,7 @@ let executeQuery (command: DbCommand) =
     command.ExecuteReader ()
 
 let executeQueryWithTimeout timeout =
-    Statement.setStatementTimeout timeout >> executeQuery
+    Statement.withStatementTimeout timeout >> executeQuery
 
 /// Returns a single record.
 let executeScalar (command: DbCommand) =

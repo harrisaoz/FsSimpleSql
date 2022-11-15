@@ -9,7 +9,7 @@ type StatementTimeout =
 
 let [<Literal>] DefaultStatementTimeoutSeconds = 180
 
-let setStatementTimeout timeout (command: DbCommand) =
+let withStatementTimeout timeout (command: DbCommand) =
     match timeout with
     | TimeoutSeconds seconds ->
         command.CommandTimeout <- seconds
