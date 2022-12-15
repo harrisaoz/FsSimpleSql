@@ -29,7 +29,7 @@ type RecordEnumerator<'a> (reader: DbDataReader, deserialize: DbDataReader -> 'a
         member this.GetEnumerator(): IEnumerator<'a> =
             this :> IEnumerator<'a>
 
-let enumerateResultSet (extract: DbDataReader -> 'a) reader =
+let enumerateResultSet (extract: DbDataReader -> 'a) reader : 'a seq =
     new RecordEnumerator<'a>(reader, extract)
 
 let getNotNull (reader: DbDataReader) (columnValueByIndex: int -> 'a) (columnName: string) =

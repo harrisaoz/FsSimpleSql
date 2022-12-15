@@ -18,7 +18,7 @@ let commit (transaction: DbTransaction) =
 let rollback (transaction: DbTransaction) =
     transaction.Rollback ()
 
-let inTransaction (connection: DbConnection, command: DbCommand) (work: DbCommand -> 'a) =
+let inTransaction (connection: DbConnection) (command: DbCommand) (work: DbCommand -> 'a) =
     let tx = start connection |> associate command
     try
         let workOutput = work command
