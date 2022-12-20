@@ -33,7 +33,7 @@ let newDataSource validate connectionString =
 
     let getConnection () =
         connectionString
-        |> secureMarsDefaults
+        |> applyDefaults StandardDefaults.secureMars
         |> validate
         // |> simpleValidate (List.append TrustedNetwork.requiredParameters WithUserCredentials.requiredParameters)
         |> newConnection

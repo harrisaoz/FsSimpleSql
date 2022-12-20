@@ -33,25 +33,22 @@ let applyDefaults defaultMap connectionString =
     |> Map.fold (B C (B C) defaultCsParamTo) (connectionString |> StringExt.split [| ';' |])
     |> String.concat ";"
 
-let secureMarsDefaults =
-    applyDefaults (
+module StandardDefaults =
+    let secureMars =
         Map
             [ ("Application Name", "FsSimpleSql")
               ("Multiple Active Result Sets", "True")
               ("Min Pool Size", "1")
               ("Max Pool Size", "1")
               ("Application Intent", "ReadWrite") ]
-    )
 
-let unsecureCqrsDefaults =
-    applyDefaults (
+    let unsecureCqrs =
         Map
             [ ("Application Name", "FsSimpleSql")
               ("Multiple Active Result Sets", "False")
               ("Min Pool Size", "1")
               ("Max Pool Size", "1")
               ("Trust Server Certificate", "true") ]
-    )
 
 let setApplicationIntent intent connectionString =
     let builder =

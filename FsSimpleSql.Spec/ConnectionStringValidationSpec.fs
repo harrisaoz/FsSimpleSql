@@ -18,7 +18,7 @@ let ``An otherwise empty connection string with only default secure MARS scenari
     ()
     =
     lazy
-        (secureMarsDefaults ""
+        (applyDefaults StandardDefaults.secureMars ""
          |> simpleValidate validationBuilder BasicNetwork.requiredParameters)
     |> Prop.throws<System.ArgumentException, _>
 

@@ -18,8 +18,10 @@ let ``B C (B C) rotates the last three arguments`` (f: int -> int -> int -> int)
 module WithCustomTypes =
     [<Property>]
     let ``secureMarsDefaults sets MARS to true and intent to read/write`` (ArbConnectionString cs) =
-        secureMarsDefaults cs
+        let standardisedCs = applyDefaults StandardDefaults.secureMars cs
+
+        standardisedCs
         |> (fun s ->
             s.Contains "Multiple Active Result Sets=True" &&
             s.Contains "Application Intent=ReadWrite")
-        |> Prop.label (secureMarsDefaults cs)
+        |> Prop.label standardisedCs
