@@ -2,6 +2,7 @@
 
 open FsCombinators.Core
 open FsSimpleSql
+open Microsoft.Data.SqlClient
 
 type Document<'Id, 'Name, 'Content> =
     | Document of identity: 'Id * name: 'Name * content: 'Content
@@ -83,10 +84,16 @@ let exportDocumentsAndAcknowledge
     >> List.ofSeq
 
 module DefaultDependencies =
-    let ackPrep =
+    let ackPrep idParameterName =
         let newStoredProcStatement connection =
             connection
-            |> (Statement.newStatement >> Statement.asStoredProcedure)
+            |> (Statement.newStatement
+                >> Statement.asStoredProcedure
+                >> Statement.withParameters
+                    [| SqlParameter(
+                           $"@{idParameterName}",
+                           System.Data.SqlDbType.Int
+                       ) |])
 
         CommandFacade.PrepareCommandStatementDependencies(
             newStatement = newStoredProcStatement,
@@ -104,24 +111,25 @@ module DefaultDependencies =
 
         CommandFacade.ExecuteStatementDependencies(executeCommand = execCmd)
 
-let standardAckPrep () =
-    DefaultDependencies.ackPrep |> CommandFacade.prepareStatement
+let standardAckPrep idParameterName =
+    DefaultDependencies.ackPrep idParameterName
+    |> CommandFacade.prepareStatement
 
 let standardAckExec () =
     DefaultDependencies.ackExec |> CommandFacade.executeStatement
 
-let standardAckStatement ackPrepCtx ackPrepData =
+let standardAckStatement idParameterName ackPrepCtx ackPrepData =
     Command.ExecuteStatementData(
         statement =
             (Command.prepareStatement
-                DefaultDependencies.ackPrep
+                (DefaultDependencies.ackPrep idParameterName)
                 ackPrepCtx
                 ackPrepData)
     )
 
-let exportDocsAndAcknowledgeWithDefaultDependencies () =
+let exportDocsAndAcknowledgeWithDefaultDependencies idParameterName =
     exportDocumentsAndAcknowledge
         QueryFacade.DefaultDependencies.prepareStatement
         QueryFacade.DefaultDependencies.executeStatement
-        DefaultDependencies.ackPrep
+        (DefaultDependencies.ackPrep idParameterName)
         DefaultDependencies.ackExec
