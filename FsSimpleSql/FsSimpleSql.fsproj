@@ -22,6 +22,7 @@
         <Compile Include="Facades\CommandFacade.fs"/>
         <Compile Include="Facades\ProcessStreamAndFeedback.fs"/>
         <Compile Include="Facades\ExportAndAcknowledge.fs"/>
+        <Compile Include="Facades\SyncSeqApply.fs"/>
     </ItemGroup>
 
     <ItemGroup>

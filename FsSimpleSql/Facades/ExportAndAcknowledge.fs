@@ -75,12 +75,13 @@ let exportDocumentsAndAcknowledge
         >> Result.map (C K trace)
         >> Result.mapError (C K onErr)
 
-    let exportAndAckAsync doc = async { return main doc }
-
+    // Eliminate Async.Sequential/RunSync by doing the following:
+    // - use a command/query connection pair
+    // - execute query in the query connection, without an explicit transaction
+    // - execute the ack command in the command connection, using an explicit
+    //   transaction that is set to Snapshot isolation.
     Query.executeQuery qryPrepDeps qryExecDeps qryPrepCtx qryExecCtx
-    >> Seq.map exportAndAckAsync
-    >> Async.Sequential
-    >> Async.RunSynchronously
+    >> Seq.map main
     >> List.ofSeq
 
 module DefaultDependencies =
