@@ -14,6 +14,7 @@
         <Compile Include="ConnectionString.fs"/>
         <Compile Include="ConnectionStringValidation.fs"/>
         <Compile Include="Connection.fs"/>
+        <Compile Include="Parameters.fs"/>
         <Compile Include="Statement.fs"/>
         <Compile Include="Exec.fs"/>
         <Compile Include="Tx.fs"/>
