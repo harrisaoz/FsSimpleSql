@@ -7,27 +7,48 @@ let fixParameterName (name: string) =
     if name.StartsWith("@") then name else $"@{name}"
 
 /// <summary>
-/// Create a new DbParameter of the given type and '@' name.
+/// Create a new DbParameter of the given type and <c>@</c> name.
 /// </summary>
 ///
 /// <remarks>
+/// A note on sized parameters:
+/// <para>
+/// Note that character strings (and any other parameter having a size aspect)
+/// require a size attribute. Use
+/// <see cref="newSizedParameter">newSizedParameter</see> or
+/// <see cref="havingSize">havingSize</see> for such cases.
+/// </para>
+///
+/// <para>
 /// Type-specific utility function via partial application:
 /// <code>
 /// let newIdParameter = newParameter SqlDbType.Int
 /// let personIdParam = newIdParameter "person_id"
 /// let hatIdParam = newIdParameter "hat_id"
 /// </code>
+/// </para>
+///
+/// <para>
 /// Chaining:
 /// <code>
 /// newParameter SqlDbType.Int "maxLengthMm" | withValue 10
 /// </code>
+/// </para>
 /// </remarks>
 ///
-/// <param name="name">The name of the parameter.  The name may or may not
-/// include the initial '@' character - if not present, it is added before
-/// creating the parameter.</param>
-/// <param name="dbType">The column type of the parameter. See
-/// <see cref="System.Data.Common.SqlDbType">SqlDbType</see></param>
+/// <param name="dbType">
+/// Define the database column type of the parameter. See
+/// <see cref="System.Data.Common.SqlDbType">SqlDbType</see>.
+/// Common types are:
+/// SqlDbType.Int;
+/// SqlDbType.VarChar (non-UTF8);
+/// SqlDbType.NVarChar (UTF8).
+/// </param>
+///
+/// <param name="name">
+/// The name may or may not include the initial <c>@</c> character
+/// - if not present, it is added before creating the parameter.
+/// </param>
 let newParameter dbType (name: string) : DbParameter =
     SqlParameter(fixParameterName name, dbType)
 
