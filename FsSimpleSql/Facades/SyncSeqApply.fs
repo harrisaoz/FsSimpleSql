@@ -38,3 +38,13 @@ let map
     |> Exec.executeQuery
     |> Records.enumerateResultSet resultSetAdapter
     |> Seq.map (fun r -> (r, each r))
+
+let summarize onOk onError =
+    Seq.fold
+        (fun (applyCount, total) (a, result) ->
+            match result with
+            | Result.Ok numberOfRowsAffected ->
+                K(applyCount + numberOfRowsAffected, total + 1)
+                <| onOk (a, numberOfRowsAffected)
+            | Result.Error msg -> K(applyCount, total + 1) <| onError (a, msg))
+        (0, 0)
