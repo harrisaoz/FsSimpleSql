@@ -49,6 +49,9 @@ let withParameters (parameters: DbParameter array) (command: DbCommand) =
 
     command
 
+let withParameter (parameter: DbParameter) =
+    withParameters (parameter |> Array.singleton)
+
 let rebind (parameters: DbParameter array) (command: DbCommand) =
     parameters
     |> Array.iter (fun (p: DbParameter) -> command.Parameters.Item(p.ParameterName).Value <- p.Value)
