@@ -58,6 +58,9 @@ let rebind (parameters: DbParameter array) (command: DbCommand) =
 
     command
 
+let rebindParameter (parameter: DbParameter) =
+    rebind <| Array.singleton parameter
+
 let withParameterValue (paramIndex: int) value (command: DbCommand) =
     command.Parameters.Item(paramIndex).Value <- value
     command
