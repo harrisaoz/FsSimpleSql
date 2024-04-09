@@ -12,6 +12,7 @@
         <Compile Include="ConnectionStringValidationSpec.fs" />
         <Compile Include="ConnectionStringSpec.fs" />
         <Compile Include="Facades\QueryFacadeSpec.fs" />
+        <Compile Include="Facades\SyncSeqApplySpec.fs" />
         <Compile Include="ProcessStreamAndFeedbackSpec.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
