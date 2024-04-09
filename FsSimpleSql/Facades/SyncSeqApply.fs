@@ -51,6 +51,21 @@ let mapGeneric
         |> enumerateResultSet rsReader
         |> Seq.map (fun record -> (record, each record))
 
+/// <summary>
+/// For each tuple in the result set obtained by executing the specified query:
+/// 1. execute an external (non-database) operation
+/// 2. execute a database stored procedure
+/// 3. Return the pair of values which is the input tuple and the result of executing the database
+/// stored procedure.
+/// </summary>
+/// <remarks>
+/// It is recommended to use the following connection string parameters:
+/// - Multiple Active Result Sets = false
+/// - Min Pool Size = 1
+/// - Max Pool Size = 1
+/// This can be achieved with an insecure connection using
+/// <code>ConnectionString.unsecureCqrs</code>
+/// </remarks>
 let map query = mapGeneric dbFunctions query
 
 let summarize onOk onError =
