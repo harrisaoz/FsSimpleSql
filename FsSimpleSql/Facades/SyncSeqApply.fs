@@ -10,9 +10,6 @@ type ExternalAction<'a, 'b> =
 
 let noop = Noop(Result.Ok None)
 
-let executeCmdInTx connection cmd =
-    Tx.inTransaction connection Exec.executeDml cmd
-
 type GenericFunctions<'Conn, 'Stmt, 'Reader, 'a> =
     { NewStatement: 'Conn -> 'Stmt
       PrepareStatement: 'Stmt -> 'Stmt
