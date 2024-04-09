@@ -2,21 +2,17 @@
 
 open System.Data.Common
 
-let startIsolated level (connection: DbConnection) =
-    connection.BeginTransaction(level)
+let startIsolated level (connection: DbConnection) = connection.BeginTransaction(level)
 
-let start =
-    startIsolated System.Data.IsolationLevel.Snapshot
+let start = startIsolated System.Data.IsolationLevel.Snapshot
 
 let associate (command: DbCommand) transaction =
     command.Transaction <- transaction
     transaction
 
-let commit (transaction: DbTransaction) =
-    transaction.Commit ()
+let commit (transaction: DbTransaction) = transaction.Commit()
 
-let rollback (transaction: DbTransaction) =
-    transaction.Rollback ()
+let rollback (transaction: DbTransaction) = transaction.Rollback()
 
 let inTransaction (connection: DbConnection) (command: DbCommand) (work: DbCommand -> 'a) =
     let tx = start connection |> associate command
