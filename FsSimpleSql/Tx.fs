@@ -14,7 +14,7 @@ let commit (transaction: DbTransaction) = transaction.Commit()
 
 let rollback (transaction: DbTransaction) = transaction.Rollback()
 
-let inTransaction (connection: DbConnection) (execute: DbCommand -> 'a) (statement: DbCommand) =
+let inTransaction (execute: DbCommand -> 'a) (connection: DbConnection) (statement: DbCommand) =
     let tx = connection |> start |> associate statement
 
     try

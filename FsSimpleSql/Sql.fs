@@ -24,7 +24,7 @@ let pipeToExternalThenAuditWithLogging (logger: ILogger) qryTimeout id producer 
         |> Statement.withParameters dbConsumerParams
 
     let dbConsume (a: 'a) =
-        Tx.inTransaction cmdConn (dbConsumerBinder a >> Exec.executeDml) consumerStatement
+        Tx.inTransaction (dbConsumerBinder a >> Exec.executeDml) cmdConn consumerStatement
 
     let forEach (a: 'a) =
         async {

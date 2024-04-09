@@ -106,8 +106,8 @@ module DefaultDependencies =
         let execCmd cmd =
             executeInTransaction
                 Tx.inTransaction
-                (Statement.associatedConnection cmd)
                 Exec.executeDml
+                (Statement.associatedConnection cmd)
                 cmd
 
         CommandFacade.ExecuteStatementDependencies(executeCommand = execCmd)

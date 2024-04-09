@@ -20,7 +20,7 @@ type GenericFunctions<'Conn, 'Stmt, 'Reader, 'a> =
 let dbFunctions: GenericFunctions<DbConnection, DbCommand, DbDataReader, 'a> =
     { NewStatement = Statement.newStatement
       PrepareStatement = Statement.prepareStatement
-      ExecInTx = (fun connection -> Tx.inTransaction connection Exec.executeDml)
+      ExecInTx = (fun connection stmt -> Tx.inTransaction Exec.executeDml connection stmt)
       ExecuteQuery = Exec.executeQuery
       EnumerateResultSet = Records.enumerateResultSet }
 
