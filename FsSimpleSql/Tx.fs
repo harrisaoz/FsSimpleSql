@@ -14,13 +14,13 @@ let commit (transaction: DbTransaction) = transaction.Commit()
 
 let rollback (transaction: DbTransaction) = transaction.Rollback()
 
-let inTransaction (connection: DbConnection) (command: DbCommand) (work: DbCommand -> 'a) =
-    let tx = start connection |> associate command
+let inTransaction (connection: DbConnection) (execute: DbCommand -> 'a) (statement: DbCommand) =
+    let tx = connection |> start |> associate statement
+
     try
-        let workOutput = work command
+        let executionResult = execute statement
         commit tx
-        Ok workOutput
-    with
-        | ex ->
-            rollback tx
-            Error ex.Message
+        Ok executionResult
+    with ex ->
+        rollback tx
+        Error ex.Message
