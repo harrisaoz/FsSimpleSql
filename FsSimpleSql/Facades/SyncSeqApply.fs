@@ -10,41 +10,57 @@ type ExternalAction<'a, 'b> =
 
 let noop = Noop(Result.Ok None)
 
-let map
-    (initQuery: DbCommand -> DbCommand)
-    (resultSetAdapter: DbDataReader -> 'a)
-    (externalAction: ExternalAction<'a, 'e>)
-    (initDbCommand: DbCommand -> DbCommand)
-    (rebindCommand: 'a -> DbCommand -> DbCommand)
-    (commandConnection, queryConnection)
+let executeCmdInTx connection cmd =
+    Tx.inTransaction connection Exec.executeDml cmd
+
+type GenericFunctions<'Conn, 'Stmt, 'Reader, 'a> =
+    { NewStatement: 'Conn -> 'Stmt
+      PrepareStatement: 'Stmt -> 'Stmt
+      ExecInTx: 'Conn -> 'Stmt -> Result<int, string>
+      ExecuteQuery: 'Stmt -> 'Reader
+      EnumerateResultSet: ('Reader -> 'a) -> 'Reader -> 'a seq }
+
+let dbFunctions: GenericFunctions<DbConnection, DbCommand, DbDataReader, 'a> =
+    { NewStatement = Statement.newStatement
+      PrepareStatement = Statement.prepareStatement
+      ExecInTx = (fun connection -> Tx.inTransaction connection Exec.executeDml)
+      ExecuteQuery = Exec.executeQuery
+      EnumerateResultSet = Records.enumerateResultSet }
+
+let mapGeneric
+    ({ NewStatement = newStatement
+       PrepareStatement = prepareStatement
+       ExecInTx = execInTx
+       ExecuteQuery = executeQuery
+       EnumerateResultSet = enumerateResultSet }: GenericFunctions<'c, 's, 'r, 'a>)
     =
-    let dmlStatement: DbCommand =
-        Statement.newStatement commandConnection
-        |> initDbCommand
-        |> Statement.prepareStatement
+    fun query rsReader externalAction proc procRebind (commandConn, queryConn) ->
+        let procStmt = newStatement commandConn |> proc |> prepareStatement
 
-    let each (record: 'a) : Result<int, string> =
-        match externalAction with
-        | ExternalFunction externalCommand -> externalCommand record
-        | Noop result -> result
-        |> Result.bind (fun _ ->
-            dmlStatement
-            |> rebindCommand record
-            |> C (Tx.inTransaction commandConnection) Exec.executeDml)
+        let each (record: 'a) : Result<int, string> =
+            match externalAction with
+            | ExternalFunction f -> f record
+            | Noop result -> result
+            |> Result.bind (fun _ -> procRebind record procStmt |> execInTx commandConn)
 
-    Statement.newStatement queryConnection
-    |> initQuery
-    |> Statement.prepareStatement
-    |> Exec.executeQuery
-    |> Records.enumerateResultSet resultSetAdapter
-    |> Seq.map (fun r -> (r, each r))
+        queryConn
+        |> newStatement
+        |> query
+        |> prepareStatement
+        |> executeQuery
+        |> enumerateResultSet rsReader
+        |> Seq.map (fun record -> (record, each record))
+
+let map query = mapGeneric dbFunctions query
 
 let summarize onOk onError =
     Seq.fold
-        (fun (applyCount, total) (a, result) ->
+        (fun (totalNumberOfRowsAffected, totalItemCount) (a, result) ->
             match result with
-            | Result.Ok numberOfRowsAffected ->
-                K(applyCount + numberOfRowsAffected, total + 1)
-                <| onOk (a, numberOfRowsAffected)
-            | Result.Error msg -> K(applyCount, total + 1) <| onError (a, msg))
+            | Result.Ok numberOfRowsAffectedByCall ->
+                K
+                <| (totalNumberOfRowsAffected + numberOfRowsAffectedByCall, totalItemCount + 1)
+                <| onOk (a, numberOfRowsAffectedByCall)
+            | Result.Error msg ->
+                K <| (totalNumberOfRowsAffected, totalItemCount + 1) <| onError (a, msg))
         (0, 0)
