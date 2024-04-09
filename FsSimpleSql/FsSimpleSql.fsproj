@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <PackageId>FsSimpleSql</PackageId>
-        <Version>0.16.0</Version>
+        <Version>0.17.0</Version>
         <Authors>Anthony Harris</Authors>
         <RepositoryUrl>https://github.com/harrisaoz/FsSimpleSql</RepositoryUrl>
 
