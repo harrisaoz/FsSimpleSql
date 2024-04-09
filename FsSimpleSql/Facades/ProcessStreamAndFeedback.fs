@@ -24,7 +24,7 @@ let runUnbound
      bind: 'Parameters -> 'Command -> 'Command,
      execStreamQry: 'Command -> 'Reader,
      enumStream: ('Reader -> 'Srec) -> 'Reader -> #seq<'Srec>,
-     inTx: 'Connection -> 'Command -> ('Command -> int) -> Result<int, string>,
+     inTx: 'Connection -> ('Command -> int) -> 'Command -> Result<int, string>,
      execFeedbackQry: 'Command -> int)
     (SqlQuery(producerText, producerParams, producerDao: 'Reader -> 'Srec))
     (SqlCommand(newStatement, dbConsumerParams, dbConsumerBinder: 'Srec -> 'Command -> 'Command))
@@ -36,7 +36,7 @@ let runUnbound
         newStatement feedbackConn |> bind dbConsumerParams
 
     let dbConsume (a: 'Srec) =
-        inTx feedbackConn consumerStatement (dbConsumerBinder a >> execFeedbackQry)
+        inTx feedbackConn (dbConsumerBinder a >> execFeedbackQry) consumerStatement
 
     let forEach (a: 'Srec) =
         async {

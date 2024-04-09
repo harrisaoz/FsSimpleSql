@@ -24,8 +24,8 @@ type ExportDependencies<'DocId, 'DocName, 'DocContent> =
 module Query = QueryFacade
 module Command = CommandFacade
 
-let executeInTransaction inTx stmtConn exec =
-    (B (B C) (B (B W) B)) inTx stmtConn exec
+let executeInTransaction inTx stmtConn exec stmt =
+    inTx stmtConn exec stmt
 
 /// qryPrepDeps: how to create a prepared statement for a query
 /// qryExecDeps: how to:
@@ -106,7 +106,7 @@ module DefaultDependencies =
         let execCmd cmd =
             executeInTransaction
                 Tx.inTransaction
-                Statement.associatedConnection
+                (Statement.associatedConnection cmd)
                 Exec.executeDml
                 cmd
 
