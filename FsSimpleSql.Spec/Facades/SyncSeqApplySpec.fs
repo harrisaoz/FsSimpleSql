@@ -12,7 +12,7 @@ let ``map over empty result set is empty sequence`` () =
         { NewStatement = (fun _ -> 0)
           PrepareStatement = id
           ExecInTx = (fun _ _ -> Result.Ok 1)
-          ExecuteQuery = (fun _ -> 0)
+          ExecuteQuery = (fun _ -> Ok 0)
           EnumerateResultSet = (fun _ _ -> emptyResultSet) }
 
     let query = fun _ -> 0
@@ -22,10 +22,11 @@ let ``map over empty result set is empty sequence`` () =
     let procRebind = fun _ _ -> 0
     let connections = 2, 1
 
-    let actual =
-        mapGeneric fakeFunctions query extractRecord externalAction proc procRebind connections
+    let actual = mapGeneric fakeFunctions query extractRecord externalAction proc procRebind connections
 
-    Seq.length actual = 0
+    match actual with
+    | Ok xs -> Seq.length xs = 0 |> Prop.label "Ok"
+    | _ -> false |> Prop.label "Unexpected result of type Error"
 
 [<Property>]
 let ``map over query returning one row should have one element`` (data: int, epr: int, efv: int) =
@@ -36,7 +37,7 @@ let ``map over query returning one row should have one element`` (data: int, epr
         { NewStatement = (fun _ -> 0)
           PrepareStatement = id
           ExecInTx = (fun _ _ -> Result.Ok expectedProcResult)
-          ExecuteQuery = (fun _ -> 1)
+          ExecuteQuery = (fun _ -> Ok 1)
           EnumerateResultSet = (fun _ _ -> [ data ]) }
 
     let query = fun _ -> 0
@@ -47,15 +48,17 @@ let ``map over query returning one row should have one element`` (data: int, epr
     let connections = 2, 1
 
     let actual =
-        mapGeneric fakeFunctions query extractRecord externalAction proc procRebind connections
-        |> List.ofSeq
+        mapGeneric fakeFunctions query extractRecord externalAction proc procRebind connections |> Result.map List.ofSeq
 
     match actual with
-    | (d, Result.Ok actualProcValue) :: rest ->
-        (d = data && actualProcValue = expectedProcResult)
-        |> Prop.label $"d = {d} [expected {data}]"
-        |> Prop.label $"proc value = {actualProcValue} [expected {expectedProcResult}]"
-    | _ -> false |> Prop.label "Unexpected result structure"
+    | Error msg -> false |> Prop.label $"Unexpected Result.Error for query result ${msg}"
+    | Ok xs ->
+        match xs with
+        | (d, Result.Ok actualProcValue) :: _ ->
+            (d = data && actualProcValue = expectedProcResult)
+            |> Prop.label $"d = {d} [expected {data}]"
+            |> Prop.label $"proc value = {actualProcValue} [expected {expectedProcResult}]"
+        | _ -> false |> Prop.label "Unexpected result structure"
 
 [<Property>]
 let ``map over query returning rows should have matching number of elements``
@@ -66,13 +69,13 @@ let ``map over query returning rows should have matching number of elements``
     ) =
     let expectedProcResult = if eprBasis >= 0 then 1 else 0
     let expectedFValue = efv
-    let dataArray = Array.ofSeq <| data.Get
+    let dataArray: int array = Array.ofSeq <| data.Get
 
     let fakeFunctions: GenericFunctions<int, int, int, int> =
         { NewStatement = (fun _ -> 0)
           PrepareStatement = id
           ExecInTx = (fun _ _ -> Result.Ok expectedProcResult)
-          ExecuteQuery = (fun _ -> 1)
+          ExecuteQuery = (fun _ -> Ok 1)
           EnumerateResultSet = (fun _ _ -> dataArray) }
 
     let query = fun _ -> 0
@@ -84,13 +87,13 @@ let ``map over query returning rows should have matching number of elements``
 
     let actual =
         mapGeneric fakeFunctions query extractRecord externalAction proc procRebind connections
-        |> Array.ofSeq
+        |> Result.map Array.ofSeq
 
-    Array.zip actual dataArray
-    |> Array.fold
-        (fun isOk (output, input) ->
-            match output with
-            | d, Result.Ok actualProcValue ->
-                (isOk && d = input && actualProcValue = expectedProcResult)
-            | _ -> false)
-        true
+    let folder (isOk: bool) (output, input) =
+        match output with
+        | d, Result.Ok actualProcValue -> (isOk && d = input && actualProcValue = expectedProcResult)
+        | _ -> false
+
+    match actual with
+    | Error msg -> false |> Prop.label $"Unexpected Result.Error for query result ${msg}"
+    | Ok xs -> Array.zip xs dataArray |> Array.fold folder true |> Prop.label "Ok"
