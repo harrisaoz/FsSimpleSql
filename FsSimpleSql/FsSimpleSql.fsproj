@@ -10,6 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="ErrorHandling.fs"/>
         <Compile Include="Records.fs"/>
         <Compile Include="ConnectionString.fs"/>
         <Compile Include="ConnectionStringValidation.fs"/>

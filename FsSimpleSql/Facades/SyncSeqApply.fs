@@ -14,14 +14,14 @@ type GenericFunctions<'Conn, 'Stmt, 'Reader, 'a> =
     { NewStatement: 'Conn -> 'Stmt
       PrepareStatement: 'Stmt -> 'Stmt
       ExecInTx: 'Conn -> 'Stmt -> Result<int, string>
-      ExecuteQuery: 'Stmt -> 'Reader
+      ExecuteQuery: 'Stmt -> Result<'Reader, string>
       EnumerateResultSet: ('Reader -> 'a) -> 'Reader -> 'a seq }
 
 let dbFunctions: GenericFunctions<DbConnection, DbCommand, DbDataReader, 'a> =
     { NewStatement = Statement.newStatement
       PrepareStatement = Statement.prepareStatement
       ExecInTx = (fun connection stmt -> Tx.inTransaction Exec.executeDml connection stmt)
-      ExecuteQuery = Exec.executeQuery
+      ExecuteQuery = Exec.tryExecuteQuery
       EnumerateResultSet = Records.enumerateResultSet }
 
 let mapGeneric
@@ -38,15 +38,16 @@ let mapGeneric
             match externalAction with
             | ExternalFunction f -> f record
             | Noop result -> result
-            |> Result.bind (fun _ -> procRebind record procStmt |> execInTx commandConn)
+            |> Result.bind (fun _ ->
+                procRebind record procStmt |> execInTx commandConn)
 
         queryConn
         |> newStatement
         |> query
         |> prepareStatement
         |> executeQuery
-        |> enumerateResultSet rsReader
-        |> Seq.map (fun record -> (record, each record))
+        |> Result.map (enumerateResultSet rsReader)
+        |> Result.map (Seq.map (fun record -> (record, each record)))
 
 /// <summary>
 /// For each tuple in the result set obtained by executing the specified query:
